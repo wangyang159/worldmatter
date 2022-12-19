@@ -1,0 +1,48 @@
+/*等待效果的css文件*/
+*{
+	margin: 0;
+	padding: 0;
+}
+
+#wait {
+	/**
+	 * 等待盒子随时概括整个页面
+	 * 给它固定定位脱离文档流
+	 * 并设置内部信息盒子处于居中位置
+	 */
+	width: 100%;
+	height: 100%;
+	position: absolute;
+	z-index: 6;
+	top: 0%;
+	background: rgba(174, 254, 255, 0.5);
+	justify-content: center;
+	align-items: center;
+	display: flex;
+}
+#mes{
+	/**
+	 * 信息盒子：等待页面中的提示信息
+	 */
+	width: 25%;
+	height: 15%;
+	text-align: center;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	border-radius: 50px;
+	background: linear-gradient(145deg, #c09e9e, #e4bbbb);
+	box-shadow:  20px 20px 60px #af9090,
+	-20px -20px 60px #fbcfcf;
+}
+
+#mytext{
+	/**
+	 * 主体内容盒子，本页面所有的内容都展示在其中
+	 * 盒子的大小自己把控现在的参数16寸笔记本屏幕浏览器100%分辨率刚好满铺
+	 */
+	background-color: aquamarine;
+	width: 1550px;
+	height: 710px;
+	margin: 0 auto;
+}
