@@ -59,18 +59,12 @@ public class PDFSServiceImpl implements PDFSService {
     public Map apPdfToDocx(MultipartFile[] files) {
         //返回结果的Map文件、运行中存储文件名的buffer
         Map result = new HashMap<String, Object>();
-        //为了效率不考虑有线程锁的其他容器
         StringBuffer bu = new StringBuffer();
 
-        //安全阈值目前写死10个文件，如果超出就用20，没有超出就按照配置中设置的来
-        int free_num = 0;
-        if(max_files>10){
-            free_num=10;
-        }else{
-            free_num=max_files.intValue();
-        }
+        //1、安全阈值，转换文件数最大不能配置文件中限制的文件个数
+        int free_num = max_files.intValue();
 
-        //判断接收的数据是否正常
+        //2、判断接收的数据是否正常，不能是0或者超过最大值
         if(files.length<=0){
             result.put("resultCode",0);
             result.put("msg", "文件接收异常联系系统管理员");
@@ -82,12 +76,12 @@ public class PDFSServiceImpl implements PDFSService {
             return result;
         }
 
-        //上传文件，并将上传完的文件写在buffer里，并英文逗号分隔
+        //3、上传文件，并将上传完的文件写在buffer里，并英文逗号分隔
         try {
             for (int i = 0 ; i < files.length ; i++ ){
                 String s = saveFile(files[i]);
                 //通过判断让末尾没有文件名的分隔符
-                if(i == (free_num-1) ){
+                if(i == (files.length-1) ){
                     bu.append(s);
                 }else{
                     bu.append(s+",");
@@ -100,15 +94,15 @@ public class PDFSServiceImpl implements PDFSService {
             return result;
         }
 
-        //文件名提取出来
+        //4、文件名提取出来
         String[] yuan_files = bu.toString().split(",");
         //清空buffer里的原文件名
         bu.delete(0,bu.length());
 
-        //线程伴生对象用来阻塞主线程
+        //5、线程伴生对象用来阻塞主线程
         CountDownLatch countDownLatch = new CountDownLatch(files.length);
 
-        //给线程池提交任务：转换原文件--》把转换后的文件名写给buffer
+        //6、给线程池提交任务：转换原文件--》把转换后的文件名写给buffer
         final boolean[] hasExc = {false};//发生意外断掉程序
         for(int i = 0 ; i < files.length ; i++ ){
             //创建任务对象
@@ -156,18 +150,18 @@ public class PDFSServiceImpl implements PDFSService {
                 }
             };
 
-            // 将任务交给线程池管理
-            pdfToWordThreadPool.execute(runnable);
-
             //提交任务的同时判断程序是否安全，如果发生了意外就断掉程序
             if(hasExc[0]){
                 result.put("resultCode",3);
                 result.put("msg", "文件转换发生异常请联系管理员");
                 return result;
             }
+            // 将任务交给线程池管理
+            pdfToWordThreadPool.execute(runnable);
 
         }
 
+        //7、任务提交，主进程等待
         try {
             countDownLatch.await();
         } catch (InterruptedException e) {
@@ -177,18 +171,18 @@ public class PDFSServiceImpl implements PDFSService {
             return result;
         }
 
-        //把结果文件的放入数组容器
+        //8、任务全部结束后把结果文件的放入数组容器
         String[] jieguo_files_path = bu.toString().split(",");
-        File[] jieguo_files_arr = new File[files.length];
+        File[] jieguo_files_arr = new File[jieguo_files_path.length];
         for (int i = 0; i < jieguo_files_path.length; i++) {
             jieguo_files_arr[i] = new File(jieguo_files_path[i]);
         }
 
-        //文件打包成zip
+        //9、文件打包成zip
         File zipResult = new File(resultPath, UUID.randomUUID() + ".zip");
         FileUtil.zipFiles(jieguo_files_arr, zipResult,true);
 
-        //文件处理完成，先写成返回信息，后面计划写一个压缩方法，最后给前端压缩包的加密文件名
+        //10、文件处理完成，先写成返回信息，后面计划写一个压缩方法，最后给前端压缩包的加密文件名
         result.put("resultCode",5);
         result.put("msg", Base64Util.base64Encoder( zipResult.getPath() ) );
         return result;
@@ -202,12 +196,7 @@ public class PDFSServiceImpl implements PDFSService {
         StringBuffer bu = new StringBuffer();
 
         //安全阈值目前写死10个文件，如果超出就用20，没有超出就按照配置中设置的来
-        int free_num = 0;
-        if(max_files>10){
-            free_num=10;
-        }else{
-            free_num=max_files.intValue();
-        }
+        int free_num = max_files.intValue();
 
         //判断接收的数据是否正常
         if(files.length<=0){
@@ -226,7 +215,7 @@ public class PDFSServiceImpl implements PDFSService {
             for (int i = 0 ; i < files.length ; i++ ){
                 String s = saveFile(files[i]);
                 //通过判断让末尾没有文件名的分隔符
-                if(i == (free_num-1) ){
+                if(i == (files.length-1) ){
                     bu.append(s);
                 }else{
                     bu.append(s+",");
@@ -282,15 +271,16 @@ public class PDFSServiceImpl implements PDFSService {
                 }
             };
 
-            // 将任务交给线程池管理
-            pdfToWordThreadPool.execute(runnable);
-
             //提交任务的同时判断程序是否安全，如果发生了意外就断掉程序
             if(hasExc[0]){
                 result.put("resultCode",3);
                 result.put("msg", "文件转换发生异常请联系管理员");
                 return result;
             }
+
+            // 将任务交给线程池管理
+            pdfToWordThreadPool.execute(runnable);
+
         }
 
         try {
@@ -304,7 +294,7 @@ public class PDFSServiceImpl implements PDFSService {
 
         //把结果文件的放入数组容器
         String[] jieguo_files_path = bu.toString().split(",");
-        File[] jieguo_files_arr = new File[files.length];
+        File[] jieguo_files_arr = new File[jieguo_files_path.length];
         for (int i = 0 ; i < jieguo_files_path.length ; i++ ){
             jieguo_files_arr[i] = new File(jieguo_files_path[i]);
         }
