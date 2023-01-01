@@ -62,7 +62,7 @@ public class PDFSServiceImpl implements PDFSService {
         StringBuffer bu = new StringBuffer();
 
         //1、安全阈值，转换文件数最大不能配置文件中限制的文件个数
-        int free_num = max_files.intValue();
+        int free_num = max_files.intValue()>0 ? max_files.intValue() : 1 ;
 
         //2、判断接收的数据是否正常，不能是0或者超过最大值
         if(files.length<=0){
@@ -196,7 +196,7 @@ public class PDFSServiceImpl implements PDFSService {
         StringBuffer bu = new StringBuffer();
 
         //安全阈值目前写死10个文件，如果超出就用20，没有超出就按照配置中设置的来
-        int free_num = max_files.intValue();
+        int free_num = max_files.intValue()>0 ? max_files.intValue() : 1 ;
 
         //判断接收的数据是否正常
         if(files.length<=0){
