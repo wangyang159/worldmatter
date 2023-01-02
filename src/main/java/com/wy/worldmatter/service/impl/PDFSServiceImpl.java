@@ -16,6 +16,7 @@ import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
 
 /**
  * 作者: wangyang <br/>
@@ -34,14 +35,22 @@ public class PDFSServiceImpl implements PDFSService {
     private Integer max_files;
 
     //定长线程池处理文件
-    private static ExecutorService pdfToWordThreadPool = Executors.newFixedThreadPool(10);
+    private static ExecutorService pdfToWordThreadPool ;
+    private static Integer task_num;
+
+    @Value("${pdf.task.num}")
+    public void setTask_num(Integer num){
+        //初始化线程池并保留线程个数
+        PDFSServiceImpl.pdfToWordThreadPool=Executors.newFixedThreadPool(num);
+        PDFSServiceImpl.task_num=num;
+    }
 
     @Override
     public String saveFile(MultipartFile file) throws IOException {
         //获取文件名称
         String originalFilename = file.getOriginalFilename();
         //结果文件名称
-        String fileName = "原文件_"+ System.currentTimeMillis() + "_" + originalFilename;
+        String fileName = "原文件_"+ UUID.randomUUID() + "_" + originalFilename;
         //创建新文件对象
         File destFile = new File(resultPath, fileName);
 
@@ -61,8 +70,10 @@ public class PDFSServiceImpl implements PDFSService {
         Map result = new HashMap<String, Object>();
         StringBuffer bu = new StringBuffer();
 
-        //1、安全阈值，转换文件数最大不能配置文件中限制的文件个数
+        //1、文件总数的安全阈值，转换文件数最大不能超过配置文件中限制的单次文件个数
         int free_num = max_files.intValue()>0 ? max_files.intValue() : 1 ;
+        //这个是线程池正在运行的任务数，后面用来提交任务前检查剩余线程是否足够
+        int threadCount = ((ThreadPoolExecutor)pdfToWordThreadPool).getActiveCount();
 
         //2、判断接收的数据是否正常，不能是0或者超过最大值
         if(files.length<=0){
@@ -74,7 +85,12 @@ public class PDFSServiceImpl implements PDFSService {
             result.put("resultCode",1);
             result.put("msg", "文件个数超出目前支持的最大个数请检查");
             return result;
+        }else if( task_num - threadCount < files.length){
+            result.put("resultCode",6);
+            result.put("msg", "当前剩余资源数"+(task_num - threadCount)+",现有剩余资源不足，请联系管理员");
+            return result;
         }
+
 
         //3、上传文件，并将上传完的文件写在buffer里，并英文逗号分隔
         try {
@@ -103,50 +119,53 @@ public class PDFSServiceImpl implements PDFSService {
         CountDownLatch countDownLatch = new CountDownLatch(files.length);
 
         //6、给线程池提交任务：转换原文件--》把转换后的文件名写给buffer
-        final boolean[] hasExc = {false};//发生意外断掉程序
+        final boolean[] hasExc = {false};//如果发生意外断掉程序，所以这里准备一个是否有异常的旗帜，默认false，没有异常
         for(int i = 0 ; i < files.length ; i++ ){
             //创建任务对象
             int finalI = i;
             Runnable runnable = new Runnable(){
                 @Override
                 public void run() {
-                    Document doc = null;
-                    FileOutputStream os = null;
-                    File f = null;
-                    try {
-                        //处理结果文件名
-                        String wordPath=yuan_files[finalI].replace("原文件","结果文件").replace(".pdf",".docx");
-                        //获取结果word文档的输出流
-                        os = new FileOutputStream(wordPath);
-                        //这个临时原文件后面要删除
-                        f = new File(yuan_files[finalI]);
-                        //ap提供了文档对象加载原文件
-                        doc = new Document(f.getPath());
-                        //全面支持DOC, DOCX, OOXML, RTF HTML, OpenDocument, PDF, EPUB, XPS, SWF 相互转换
-                        doc.save(os, SaveFormat.DocX);
-
-                        //保存文件名
-                        if(countDownLatch.getCount()==1){
-                            bu.append(wordPath);
-                        }else{
-                            bu.append(wordPath+",");
-                        }
-
-                    } catch (FileNotFoundException e) {
-                        hasExc[0] = true;
-                        e.printStackTrace();
-                    }  finally {
+                    synchronized (yuan_files){
+                        Document doc = null;
+                        FileOutputStream os = null;
+                        File f = null;
                         try {
-                            doc.close();
-                            os.close();
-                            //转换完把原文件删了
-                            f.delete();
-                        } catch (IOException e) {
-                            e.printStackTrace();
+                            //处理结果文件名
+                            String wordPath=yuan_files[finalI].replace("原文件","结果文件").replace(".pdf",".docx");
+                            //获取结果word文档的输出流
+                            os = new FileOutputStream(wordPath);
+                            //这个临时原文件后面要删除
+                            f = new File(yuan_files[finalI]);
+                            //ap提供了文档对象加载原文件
+                            doc = new Document(f.getPath());
+                            //全面支持DOC, DOCX, OOXML, RTF HTML, OpenDocument, PDF, EPUB, XPS, SWF 相互转换
+                            doc.save(os, SaveFormat.DocX);
+
+                            //保存文件名
+                            if(countDownLatch.getCount()==1){
+                                bu.append(wordPath);
+                            }else{
+                                bu.append(wordPath+",");
+                            }
+
+                            countDownLatch.countDown();
+                        } catch (FileNotFoundException e) {
                             hasExc[0] = true;
+                            e.printStackTrace();
+                        } finally {
+                            try {
+                                os.close();
+                                doc.close();
+                                //转换完把原文件删了
+                                f.delete();
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                                hasExc[0] = true;
+                            }
                         }
-                        countDownLatch.countDown();
                     }
+
                 }
             };
 
@@ -197,6 +216,8 @@ public class PDFSServiceImpl implements PDFSService {
 
         //安全阈值目前写死10个文件，如果超出就用20，没有超出就按照配置中设置的来
         int free_num = max_files.intValue()>0 ? max_files.intValue() : 1 ;
+        //这个是线程池正在运行的任务数，后面用来提交任务前检查剩余线程是否足够
+        int threadCount = ((ThreadPoolExecutor)pdfToWordThreadPool).getActiveCount();
 
         //判断接收的数据是否正常
         if(files.length<=0){
@@ -207,6 +228,10 @@ public class PDFSServiceImpl implements PDFSService {
             //道理来讲这一步判断不需要，因为前端也要做判断，但是为了防止意外后端也做一次效验
             result.put("resultCode",1);
             result.put("msg", "文件个数超出目前支持的最大个数请检查");
+            return result;
+        }else if( task_num - threadCount < files.length){
+            result.put("resultCode",6);
+            result.put("msg", "当前剩余资源数"+(task_num - threadCount)+",现有剩余资源不足，请联系管理员");
             return result;
         }
 
@@ -243,30 +268,32 @@ public class PDFSServiceImpl implements PDFSService {
             Runnable runnable = new Runnable(){
                 @Override
                 public void run() {
-                    PdfDocument pdfDocument = null;
-                    File f = null ;
-                    String wordPath = null;
-                    try {
-                        //结果文件名
-                        wordPath=yuan_files[finalI].replace("原文件","结果文件").replace(".pdf",".docx");
-                        f = new File(yuan_files[finalI]);
-                        //转换
-                        pdfDocument = new PdfDocument();
-                        pdfDocument.loadFromFile(f.getPath());
-                        pdfDocument.saveToFile(wordPath, FileFormat.DOCX);
-                        //保存文件名
-                        if(countDownLatch.getCount()==1){
-                            bu.append(wordPath);
-                        }else{
-                            bu.append(wordPath+",");
+                    synchronized (yuan_files){
+                        PdfDocument pdfDocument = null;
+                        File f = null ;
+                        String wordPath = null;
+                        try {
+                            //结果文件名
+                            wordPath=yuan_files[finalI].replace("原文件","结果文件").replace(".pdf",".docx");
+                            f = new File(yuan_files[finalI]);
+                            //转换
+                            pdfDocument = new PdfDocument();
+                            pdfDocument.loadFromFile(f.getPath());
+                            pdfDocument.saveToFile(wordPath, FileFormat.DOCX);
+                            //保存文件名
+                            if(countDownLatch.getCount()==1){
+                                bu.append(wordPath);
+                            }else{
+                                bu.append(wordPath+",");
+                            }
+                            countDownLatch.countDown();
+                        } catch (Exception e) {
+                            hasExc[0] = true;
+                            e.printStackTrace();
+                        } finally {
+                            pdfDocument.close();
+                            f.delete();
                         }
-                    } catch (Exception e) {
-                        hasExc[0] = true;
-                        e.printStackTrace();
-                    } finally {
-                        pdfDocument.close();
-                        f.delete();
-                        countDownLatch.countDown();
                     }
                 }
             };
