@@ -42,10 +42,10 @@ public class MasterHubServiceImpl implements MasterHubService {
     public void setMasterTableInfos(String fileName) throws IOException, ClassNotFoundException {
         //获取配置文件  初始化话首页功能列表的数据
         String s = System.getProperty("user.dir") + File.separator + "lib" + File.separator + fileName;
-        System.out.println(s+"-----------------------");
+        System.out.println("首页功能表单数据文件："+s);
         ObjectInputStream objectInputStream = new ObjectInputStream(new FileInputStream(s));
         MasterHubServiceImpl.masterTableInfos = (List<MasterTableInfo>) objectInputStream.readObject();
-        System.out.println("已加载到的首页功能列表数据串--------------------"+masterTableInfos);
+        System.out.println("已加载到的首页功能列表数据串："+masterTableInfos);
         //页码集合 用摸运算，算出要分几页
         int p = MasterHubServiceImpl.masterTableInfos.size() % MasterHubServiceImpl.pageSize == 0 ? MasterHubServiceImpl.masterTableInfos.size() / MasterHubServiceImpl.pageSize : MasterHubServiceImpl.masterTableInfos.size() / MasterHubServiceImpl.pageSize + 1;
         MasterHubServiceImpl.pageNums = new ArrayList<>(p);
@@ -61,12 +61,17 @@ public class MasterHubServiceImpl implements MasterHubService {
         //当前页
         model.addAttribute("pageNum",pageNum);
         //总页数
-        int i = MasterHubServiceImpl.masterTableInfos.size() % 3;
-        int total = i==0 ? MasterHubServiceImpl.masterTableInfos.size()/3 : MasterHubServiceImpl.masterTableInfos.size()/3 + 1;
+        int i = MasterHubServiceImpl.masterTableInfos.size() % MasterHubServiceImpl.pageSize;
+        int total = i==0 ? MasterHubServiceImpl.masterTableInfos.size()/MasterHubServiceImpl.pageSize : MasterHubServiceImpl.masterTableInfos.size()/MasterHubServiceImpl.pageSize + 1;
         model.addAttribute("total",total);
         //具体数据的集合
         //正常数据库的分页是（当前页,每页大小）  但由于这里从数据集中直接拿就需要换算为(开始下标,终止下标) 当然当前页和开始下标的换算方式是一样的
-        model.addAttribute("data", MasterHubServiceImpl.masterTableInfos.subList((pageNum - 1) * 3, pageNum * 3) );
+        if(pageNum * MasterHubServiceImpl.pageSize > MasterHubServiceImpl.masterTableInfos.size()){
+            //这个if判断是因为最后一页数据不满一页，防止下标超出
+            model.addAttribute("data", MasterHubServiceImpl.masterTableInfos.subList( (pageNum - 1) * 3, MasterHubServiceImpl.masterTableInfos.size()) );
+        }else {
+            model.addAttribute("data", MasterHubServiceImpl.masterTableInfos.subList((pageNum - 1) * 3, pageNum * 3) );
+        }
         //上一页、下一页、页码的集合
         model.addAttribute("prePage",pageNum==1 ? 1 : pageNum-1 );
         model.addAttribute("nextPage",pageNum==total ? total : pageNum+1);

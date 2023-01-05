@@ -45,12 +45,23 @@ public class MasterTable {
         p3.add(new MasterTableInfoPath("/imgword/toimgword","图片转文字"));
         m3.setPath(p3);
 
+        MasterTableInfo m4 = new MasterTableInfo();
+        m4.setXh(4);
+        m4.setGnName("预留。。");
+        m4.setGnMeg("其他功能正在开发中，敬请期待。");
+
         ArrayList<MasterTableInfo> list = new ArrayList<>(3);
         list.add(m1);
         list.add(m2);
         list.add(m3);
+        list.add(m4);
 
-        FileOutputStream out = new FileOutputStream("mastertable.txt");
+//        List<MasterTableInfo> masterTableInfos = list.subList(3, 6);
+//        for (MasterTableInfo e: masterTableInfos) {
+//            System.out.println(e);
+//        }
+
+        FileOutputStream out = new FileOutputStream("lib/mastertable.txt");
         ObjectOutputStream oout = new ObjectOutputStream(out);
         oout.writeObject(list);
         oout.flush();
