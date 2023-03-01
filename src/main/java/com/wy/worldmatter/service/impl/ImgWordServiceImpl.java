@@ -41,12 +41,12 @@ public class ImgWordServiceImpl implements ImgWordService {
             resultMap.put("msg", "图片数据未接收到");
         } else {
             //根据base中的后缀生成临时文件
+            //样例：data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAB......后面的省略
             String hz = filebase64.substring(filebase64.indexOf("/")+1, filebase64.indexOf(";"));
             file = new File(imgWordTmpPath, System.currentTimeMillis() + "." + hz);
             //前台传递回来的数据格式需要处理一下，把没用的数据头删掉，以及前端强制加进去的换行符号删掉
             //样例：data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAB......后面的省略
-            base64 = filebase64.substring(filebase64.indexOf(",")+1);
-            base64 = base64.toString().replace("\r\n", "");
+            base64 = filebase64.substring(filebase64.indexOf(",")+1).replace("\r\n", "");
 
             //把base64数据解析并写入结果文件
             BufferedOutputStream bos = null;
@@ -81,7 +81,7 @@ public class ImgWordServiceImpl implements ImgWordService {
             }
         }
 
-        //因为tesseract内部try了空指针，这里需要个补丁代码
+        //因为tesseract内部try了空指针，无法捕获，所以这里需要个补丁代码防止文件转换时的空异常
         if( file==null || !file.exists()){
             resultMap.put("resultCode", 0);
             resultMap.put("msg", "图片数据未接收到");
@@ -90,7 +90,7 @@ public class ImgWordServiceImpl implements ImgWordService {
 
         //把转换好的文件用tess4j识别文字
         Tesseract tesseract = new Tesseract();
-        //语言库
+        //加载语言库
         tesseract.setDatapath(System.getProperty("user.dir")+ File.separator + "tessdata");
 
         //确定语言，注意这里设置的是tesseract的语言包用前缀代表，而不是国际语言文化代码

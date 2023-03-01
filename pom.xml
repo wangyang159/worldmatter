@@ -11,7 +11,7 @@
 
     <groupId>com.wy</groupId>
     <artifactId>worldmatter</artifactId>
-    <version>2.2.9</version>
+    <version>2.2.10</version>
     <name>worldmatter</name>
     <description>worldmatter</description>
 
@@ -19,6 +19,7 @@
         <java.version>1.8</java.version>
     </properties>
 
+    <!--e-iceblue:spire.pdf:jar:5.4.0 jar包远程库  -->
     <repositories>
         <repository>
             <id>com.e-iceblue</id>
@@ -50,15 +51,12 @@
             <groupId>com.wy</groupId>
             <artifactId>communal</artifactId>
             <version>1.1</version>
+            <scope>provided</scope>
         </dependency>
 
-        <!-- pdf转word的依赖 -->
+        <!-- pdf转word的依赖 总共两种技术-->
         <dependency>
-            <groupId>org.javassist</groupId>
-            <artifactId>javassist</artifactId>
-            <version>3.20.0-GA</version>
-        </dependency>
-        <dependency>
+            <!-- 这个用的是破解版的jar -->
             <groupId>com.aspose</groupId>
             <artifactId>aspose-pdf</artifactId>
             <version>22.4</version>

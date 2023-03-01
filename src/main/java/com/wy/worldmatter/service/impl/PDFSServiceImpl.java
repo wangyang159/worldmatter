@@ -23,7 +23,8 @@ import java.util.concurrent.ThreadPoolExecutor;
  * 创建时间: 2022/11/8 <br/>
  * 描述: <br/>
  * &nbsp;&nbsp;&nbsp;&nbsp;PDFSServiceImpl
- * 多PDF转Word功能，代码中写死最多10个一批次，如果某天发现最多10个不够就把线程池创建、最大文件判断这、配置文件这三处调大
+ * 使用两种技术aspose-pdf和spire.pdf，并没有选择使用apache-poi，因为它的操作复杂度和效果很不理想
+ * 多PDF转Word功能，代码中写死最多10个一批次，如果某天发现最多10个不够就把线程池创建、最大文件判断、配置文件这三处调大
  */
 @Service
 public class PDFSServiceImpl implements PDFSService {
@@ -60,7 +61,7 @@ public class PDFSServiceImpl implements PDFSService {
         }
         //执行拷贝过程
         file.transferTo(destFile);
-        //返回文件名
+        //返回全路径文件名
         return destFile.getPath();
     }
 
@@ -68,9 +69,10 @@ public class PDFSServiceImpl implements PDFSService {
     public Map apPdfToDocx(MultipartFile[] files) {
         //返回结果的Map文件、运行中存储文件名的buffer
         Map result = new HashMap<String, Object>();
+        //使用线程安全的StringBuffer存储程序中的字符串
         StringBuffer bu = new StringBuffer();
 
-        //1、文件总数的安全阈值，转换文件数最大不能超过配置文件中限制的单次文件个数
+        //1、配置文件中单次可转文件数不能小于等于0
         int free_num = max_files.intValue()>0 ? max_files.intValue() : 1 ;
         //这个是线程池正在运行的任务数，后面用来提交任务前检查剩余线程是否足够
         int threadCount = ((ThreadPoolExecutor)pdfToWordThreadPool).getActiveCount();
@@ -211,10 +213,10 @@ public class PDFSServiceImpl implements PDFSService {
     public Map srPdfToDocx(MultipartFile[] files) {
         //返回结果的Map文件、运行中存储文件名的buffer
         Map result = new HashMap<String, Object>();
-        //为了效率不考虑有线程锁的其他容器
+        //使用线程安全的StringBuffer存储程序中的字符串
         StringBuffer bu = new StringBuffer();
 
-        //安全阈值目前写死10个文件，如果超出就用20，没有超出就按照配置中设置的来
+        //配置文件中单次可转文件数不能小于等于0
         int free_num = max_files.intValue()>0 ? max_files.intValue() : 1 ;
         //这个是线程池正在运行的任务数，后面用来提交任务前检查剩余线程是否足够
         int threadCount = ((ThreadPoolExecutor)pdfToWordThreadPool).getActiveCount();
@@ -277,6 +279,7 @@ public class PDFSServiceImpl implements PDFSService {
                             wordPath=yuan_files[finalI].replace("原文件","结果文件").replace(".pdf",".docx");
                             f = new File(yuan_files[finalI]);
                             //转换
+                            System.out.println("开始转换");
                             pdfDocument = new PdfDocument();
                             pdfDocument.loadFromFile(f.getPath());
                             pdfDocument.saveToFile(wordPath, FileFormat.DOCX);
@@ -289,8 +292,10 @@ public class PDFSServiceImpl implements PDFSService {
                             countDownLatch.countDown();
                         } catch (Exception e) {
                             hasExc[0] = true;
+                            System.out.println("意外");
                             e.printStackTrace();
                         } finally {
+                            System.out.println("关流");
                             pdfDocument.close();
                             f.delete();
                         }

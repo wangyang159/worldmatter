@@ -158,11 +158,11 @@
 
         //文件input修改时文件转base64并回写到img
         $("#tmp_imgfile").on("change",function(){
-            //修改一个图片以为着如果有声音立马停止
+            //修改一个图片意味着如果有声音立马停止
             speechSynthesis.cancel()
             //右侧内容盒子也要清空
             document.getElementById("text_div_p").innerHTML=""
-            //把文件转为base64字符串
+            //把文件转为base64字符串回写到页面
             let f = $("#tmp_imgfile")[0].files[0]
             if(window.FileReader){
                 let reader = new FileReader()
@@ -206,7 +206,7 @@
             let lang_tmp = $("#con_se_lang option:selected").val()
             //获取语速
             utterance.rate = $("#con_se_rate option:selected").val();
-            //设置语言文化代码
+            //设置国际语言文化代码
             if(lang_tmp==1){
                 utterance.lang = "zh-CN"
             }else if(lang_tmp==2){

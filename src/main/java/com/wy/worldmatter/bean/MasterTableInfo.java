@@ -9,7 +9,8 @@ import java.util.Map;
  * 作者: wangyang <br/>
  * 创建时间: 2023/1/3 <br/>
  * 描述: <br/>
- * &nbsp;&nbsp;&nbsp;&nbsp;MasterTableInfo 功能列表项
+ * &nbsp;&nbsp;&nbsp;&nbsp;MasterTableInfo
+ * 首页功能列表项，在生成首页功能数据的时候使用
  */
 public class MasterTableInfo implements Serializable {
     private Integer xh;//序号

@@ -38,9 +38,15 @@ public class MasterHubServiceImpl implements MasterHubService {
     private static List<Integer> pageNums ;
     private static Integer pageSize = 3;
 
+    /**
+     * 首页功能列表加载方法，使用springboot赋值单参set方法的能力完成
+     * @param fileName
+     * @throws IOException
+     * @throws ClassNotFoundException
+     */
     @Value("${main.master.table.file}")
     public void setMasterTableInfos(String fileName) throws IOException, ClassNotFoundException {
-        //获取配置文件  初始化话首页功能列表的数据
+        //获取配置文件  初始化话首页功能列表的数据 user.dir可以获取到程序被调用时的路径
         String s = System.getProperty("user.dir") + File.separator + "lib" + File.separator + fileName;
         System.out.println("首页功能表单数据文件："+s);
         ObjectInputStream objectInputStream = new ObjectInputStream(new FileInputStream(s));

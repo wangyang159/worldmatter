@@ -7,6 +7,7 @@ import java.io.Serializable;
  * 创建时间: 2023/1/4 <br/>
  * 描述: <br/>
  * &nbsp;&nbsp;&nbsp;&nbsp;MasterTableInfoPath
+ * 功能连接，在生成首页功能数据的时候使用
  */
 public class MasterTableInfoPath implements Serializable {
     private String hrefPath;

@@ -2,6 +2,7 @@ package com.wy.worldmatter.controller;
 
 import com.wy.utils.Base64Util;
 import com.wy.worldmatter.service.IDPhotoService;
+import com.wy.worldmatter.utils.DownloadUtil;
 import org.apache.tomcat.util.codec.binary.Base64;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -33,29 +34,23 @@ public class IDPhotoController {
     private IDPhotoService idPhotoService;
 
     /**
-     * 描述: 跳转包含底色的证件照 <br/>
-     * 作者: wangyang <br/>
-     * 创建时间: 2022/11/4 <br/>
-     * 参数: model <br/>
-     * 返回值: 跳转前台zjzhavebj.jsp页面 <br/>
-     */
-    @RequestMapping("/zjzhavebj")
-    public String zjzHaveBj(Model model){
-        idPhotoService.zjzHaveBjParm(model);
-        return "idphotoapp/zjzhavebj";
-    }
-
-    /**
-     * 描述: 跳转证件照不含底色页面，做个人照使用 <br/>
-     * 作者: wangyang <br/>
-     * 创建时间: 2022/11/5 <br/>
-     * 参数: model <br/>
-     * 返回值: 跳转前台zjz.jsp页面 <br/>
-     */
+      * 描述: 该方法为证件照功能的跳转控制方法 <br/>
+      * 作者: wangyang <br/>
+      * 创建时间: 2023/3/1 <br/>
+      * 参数: token-跳转页面的键 1跳转无背景 2跳转有背景色 <br/>
+      * 返回值: 跳转固定页面 <br/>
+      */
     @RequestMapping("/zjz")
-    public String zjz(Model model){
-        idPhotoService.zjzParm(model);
-        return "idphotoapp/zjz";
+    public String zjztz(Model model,int token){
+        if(token == 1){
+            idPhotoService.zjzParm(model);
+            return "idphotoapp/zjz";
+        } else if (token == 2) {
+            idPhotoService.zjzHaveBjParm(model);
+            return "idphotoapp/zjzhavebj";
+        }
+        model.addAttribute("mes","请不要随意修改内部参数");
+        return "common/err";
     }
 
     /**
@@ -63,7 +58,7 @@ public class IDPhotoController {
      * 作者: wangyang <br/>
      * 创建时间: 2022/11/4 <br/>
      * 参数: base-证件照的base64编码 <br/>
-     * 返回值: Map-包含保存结果 <br/>
+     * 返回值: Map-结果集 <br/>
      */
     @RequestMapping("/zjzFromBase64")
     @ResponseBody
@@ -80,24 +75,9 @@ public class IDPhotoController {
      */
     @RequestMapping("/download")
     public void download(String path, HttpServletResponse response) throws IOException {
-        //使用工具类解密文件路径
+        //使用工具类解密文件路径,并且防止传递数据时+号变成空格
         String dePath = Base64Util.base64Decoder(path.replace(" ","+"));
-        // 文件读到流中
-        InputStream inputStream = new FileInputStream(dePath);
-
-        //设置前端响应头
-        response.reset();
-        response.setContentType("application/octet-stream");
-        String filename = new File(dePath).getName();
-        response.addHeader("Content-Disposition", "attachment; filename=" + URLEncoder.encode(filename, "UTF-8"));
-        ServletOutputStream outputStream = response.getOutputStream();
-        byte[] b = new byte[1024];
-        int len;
-        //从输入流中读取一定数量的字节，并将其存储在缓冲区字节数组中，读到末尾返回-1
-        while ((len = inputStream.read(b)) > 0) {
-            outputStream.write(b, 0, len);
-        }
-        inputStream.close();
+        DownloadUtil.whileDownload(dePath,response);
     }
 
 }

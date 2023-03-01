@@ -2,16 +2,15 @@ package com.wy.worldmatter.controller;
 
 import com.wy.utils.Base64Util;
 import com.wy.worldmatter.service.PDFSService;
+import com.wy.worldmatter.utils.DownloadUtil;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletResponse;
-import java.io.*;
-import java.net.URLEncoder;
 import java.util.Map;
 
 /**
@@ -27,35 +26,26 @@ public class PDFSController {
     @Autowired
     private PDFSService pdfsService;
 
-    @Value("${pdf.to.word.result.protect}")
-    private boolean protect;
-
     /**
-     * 描述: 跳转到ap技术转Word <br/>
-     * 作者: wangyang <br/>
-     * 创建时间: 2022/11/5 <br/>
-     * 参数:  <br/>
-     * 返回值:  <br/>
-     */
-    @RequestMapping("/appdf")
-    public String toap() {
-        return "pdfapp/appdf";
+      * 描述: 证件照功能页面跳转控制器 <br/>
+      * 作者: wangyang <br/>
+      * 创建时间: 2023/3/1 <br/>
+      * 参数: token-跳转页面的键 1跳转AP技术 2跳转SR技术 <br/>
+      * 返回值:  <br/>
+      */
+    @RequestMapping("/pdftoword")
+    public String pdfstz(Model model,int token){
+        if(token == 1){
+            return "pdfapp/appdf";
+        } else if (token == 2) {
+            return "pdfapp/srpdf";
+        }
+        model.addAttribute("mes","请不要随意修改内部参数");
+        return "common/err";
     }
 
     /**
-     * 描述: 跳转到sr技术转Word <br/>
-     * 作者: wangyang <br/>
-     * 创建时间: 2022/11/5 <br/>
-     * 参数:  <br/>
-     * 返回值:  <br/>
-     */
-    @RequestMapping("/srpdf")
-    public String tosr() {
-        return "pdfapp/srpdf";
-    }
-
-    /**
-     * 描述: 使用aspose-pdf技术，进行多pdf转word,文件最多10个，这是程序核心中写死的 <br/>
+     * 描述: 使用aspose-pdf技术，进行多pdf转word <br/>
      * 作者: wangyang <br/>
      * 创建时间: 2022/11/5 <br/>
      * 参数:  <br/>
@@ -68,7 +58,7 @@ public class PDFSController {
     }
 
     /**
-     * 描述: 使用spire技术，进行多pdf转word,文件最多10个，这是程序核心中写死的<br/>
+     * 描述: 使用spire技术，进行多pdf转word<br/>
      * 作者: wangyang <br/>
      * 创建时间: 2022/11/5 <br/>
      * 参数: 文件 <br/>
@@ -89,51 +79,7 @@ public class PDFSController {
      */
     @RequestMapping("/download")
     public void download(String path, HttpServletResponse response) {
-        try {
-            //解密文件名
-            String dePath = Base64Util.base64Decoder(path.replace(" ", "+"));
-            // path是指想要下载的文件的路径
-            File file = new File(dePath);
-            // 获取文件名
-            String filename = file.getName();
-
-            // 将文件写入输入流，加载到内存里面，暂存到名为buffer的字节数组里面
-            FileInputStream fileInputStream = new FileInputStream(file);
-            InputStream fis = new BufferedInputStream(fileInputStream);
-            byte[] buffer = new byte[fis.available()];
-            fis.read(buffer);
-            fis.close();
-            fileInputStream.close();
-
-            //是否删除
-            if(!protect){
-                file.delete();
-            }
-
-            // 预处理：清空response
-            response.reset();
-
-            // 设置response的响应Header
-            //响应内容的字符集
-            response.setCharacterEncoding("UTF-8");
-            //浏览器响应返回内容的方式
-            //Content-Disposition的作用：告知浏览器以何种方式显示响应返回的文件，用浏览器打开还是以附件的形式下载到本地保存
-            //attachment表示以附件方式下载 inline表示在线打开 "Content-Disposition: inline; filename=文件名.mp3"
-            // filename表示文件的默认名称，因为网络传输只支持URL编码的相关支付，因此需要将文件名URL编码后进行传输,前端收到后需要反编码才能获取到真正的名称
-            response.addHeader("Content-Disposition", "attachment;filename=" + URLEncoder.encode(filename, "UTF-8"));
-            // 告知浏览器文件的大小
-            response.addHeader("Content-Length", "" + file.length());
-            //获取响应的输出流把内容写景区
-            OutputStream outputStream = new BufferedOutputStream(response.getOutputStream());
-            response.setContentType("application/octet-stream");
-            outputStream.write(buffer);
-            outputStream.flush();
-
-            outputStream.close();
-
-
-        } catch (IOException ex) {
-            ex.printStackTrace();
-        }
+        String dePath = Base64Util.base64Decoder(path.replace(" ", "+"));
+        DownloadUtil.allDownload(dePath,response);
     }
 }

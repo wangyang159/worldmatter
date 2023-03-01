@@ -3,6 +3,7 @@ package com.wy.worldmatter.controller;
 import com.wy.worldmatter.service.ImgWordService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
@@ -25,15 +26,19 @@ public class ImgWordController {
     private ImgWordService imgWordService;
 
     /**
-     * 描述: 跳转到图片转文字功能的页面 <br/>
+     * 描述: 图片转文字功能跳转页面的控制器 <br/>
      * 作者: wangyang <br/>
      * 创建时间: 2022/11/16 <br/>
      * 参数:  <br/>
      * 返回值:  <br/>
      */
     @RequestMapping("/toimgword")
-    public String toImgWord(){
-        return "imgword/imgword";
+    public String toImgWord(Model model, int token){
+        if(token == 1){
+            return "imgword/imgword";
+        }
+        model.addAttribute("mes","请不要随意修改内部参数");
+        return "common/err";
     }
 
     /**
