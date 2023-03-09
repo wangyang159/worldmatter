@@ -1,9 +1,12 @@
 package com.wy.worldmatter.utils;
 
+import org.springframework.web.multipart.MultipartFile;
+
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.net.URLEncoder;
+import java.util.UUID;
 
 /**
  * 作者: wangyang <br/>
@@ -12,7 +15,7 @@ import java.net.URLEncoder;
  * &nbsp;&nbsp;&nbsp;&nbsp;DownloadUtil
  * 处理下载任务的工具类
  */
-public class DownloadUtil {
+public class UploadAndDownloadUtil {
 
     /**
       * 描述: 使用流将文件陆续传递给前端 <br/>
@@ -88,5 +91,31 @@ public class DownloadUtil {
             ex.printStackTrace();
         }
     }
+
+    /**
+     * 描述: 保存文件的方法 <br/>
+     * 作者: wangyang <br/>
+     * 创建时间: 2022/11/8 <br/>
+     * 参数: file-需要保存的文件,resultPath-保存时的基准路径 <br/>
+     * 返回值: 返回保存后的原始文件名称  <br/>
+     */
+    public static String saveFile(MultipartFile file,String resultPath) throws IOException {
+        //获取文件名称
+        String originalFilename = file.getOriginalFilename();
+        //结果文件名称
+        String fileName = "原文件_"+ UUID.randomUUID() + "_" + originalFilename;
+        //创建新文件对象
+        File destFile = new File(resultPath, fileName);
+
+        //确保目标的父文件目录存在
+        if (!destFile.getParentFile().exists()) {
+            destFile.mkdirs();
+        }
+        //执行拷贝过程
+        file.transferTo(destFile);
+        //返回全路径文件名
+        return destFile.getPath();
+    }
+
 
 }

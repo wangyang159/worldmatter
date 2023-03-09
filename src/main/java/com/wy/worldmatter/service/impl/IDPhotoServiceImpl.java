@@ -20,12 +20,16 @@ import java.util.Map;
  */
 @Service
 public class IDPhotoServiceImpl implements IDPhotoService {
+
     /**
      * 证件照保存路径
-     * 文件格式
      */
     @Value("${zjz.result.path}")
     private String imgFilePath;
+
+    /**
+     * 结果文件格式
+     */
     @Value("${zjz.result.endwith}")
     private String endWith ;
 
@@ -63,11 +67,11 @@ public class IDPhotoServiceImpl implements IDPhotoService {
             if(!imgFilePath.endsWith("\\")){
                 file = new File(imgFilePath+"\\"+
                         System.currentTimeMillis()+
-                        (endWith.startsWith("\\.")?"_result"+endWith:"_"+endWith) );
+                        "." +endWith );
             }else{
                 file = new File(imgFilePath+
                         System.currentTimeMillis()+
-                        (endWith.startsWith("\\.")?"_result"+endWith:"_"+endWith) );
+                        "." +endWith );
             }
 
             if(!file.getParentFile().exists()){

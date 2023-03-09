@@ -2,22 +2,16 @@ package com.wy.worldmatter.controller;
 
 import com.wy.utils.Base64Util;
 import com.wy.worldmatter.service.IDPhotoService;
-import com.wy.worldmatter.utils.DownloadUtil;
-import org.apache.tomcat.util.codec.binary.Base64;
+import com.wy.worldmatter.utils.UploadAndDownloadUtil;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
-import java.net.URLEncoder;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 
 /**
  * 作者: wangyang <br/>
@@ -77,7 +71,7 @@ public class IDPhotoController {
     public void download(String path, HttpServletResponse response) throws IOException {
         //使用工具类解密文件路径,并且防止传递数据时+号变成空格
         String dePath = Base64Util.base64Decoder(path.replace(" ","+"));
-        DownloadUtil.whileDownload(dePath,response);
+        UploadAndDownloadUtil.whileDownload(dePath,response);
     }
 
 }

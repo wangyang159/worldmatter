@@ -2,7 +2,7 @@ package com.wy.worldmatter.controller;
 
 import com.wy.utils.Base64Util;
 import com.wy.worldmatter.service.PDFSService;
-import com.wy.worldmatter.utils.DownloadUtil;
+import com.wy.worldmatter.utils.UploadAndDownloadUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -79,7 +79,8 @@ public class PDFSController {
      */
     @RequestMapping("/download")
     public void download(String path, HttpServletResponse response) {
+        //解密文件路径
         String dePath = Base64Util.base64Decoder(path.replace(" ", "+"));
-        DownloadUtil.allDownload(dePath,response);
+        UploadAndDownloadUtil.allDownload(dePath,response);
     }
 }

@@ -24,6 +24,9 @@ import java.util.Map;
 @Service
 public class ImgWordServiceImpl implements ImgWordService {
 
+    /**
+     * 中间文件的缓存地址
+     */
     @Value("${img.to.word.tmp.path}")
     private String imgWordTmpPath;
 
@@ -92,6 +95,8 @@ public class ImgWordServiceImpl implements ImgWordService {
         Tesseract tesseract = new Tesseract();
         //加载语言库
         tesseract.setDatapath(System.getProperty("user.dir")+ File.separator + "tessdata");
+        //抑制自动识别分辨率的日志输出
+        tesseract.setTessVariable("debug_file", "/dev/null");
 
         //确定语言，注意这里设置的是tesseract的语言包用前缀代表，而不是国际语言文化代码
         switch (lang){
@@ -117,6 +122,7 @@ public class ImgWordServiceImpl implements ImgWordService {
             resultMap.put("msg", "识别文字异常");
             return resultMap;
         } finally {
+            //转换结束后删除保存的图片
             file.delete();
         }
 

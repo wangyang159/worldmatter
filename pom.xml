@@ -11,7 +11,7 @@
 
     <groupId>com.wy</groupId>
     <artifactId>worldmatter</artifactId>
-    <version>2.2.10</version>
+    <version>2.2.11</version>
     <name>worldmatter</name>
     <description>worldmatter</description>
 
@@ -29,6 +29,7 @@
     </repositories>
 
     <dependencies>
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>

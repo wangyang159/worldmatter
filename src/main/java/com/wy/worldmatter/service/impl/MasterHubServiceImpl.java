@@ -33,6 +33,7 @@ public class MasterHubServiceImpl implements MasterHubService {
     /**
      * 首页功能列表、列表的页码集合、分页大小
      * 分页大小定死3，之所以代码里面写死，是因为如果使用set方法注入在启动时大概率发生注入不及时导致的空异常
+     * 而同时分页动态改变没有实际必要
      */
     private static List<MasterTableInfo> masterTableInfos;
     private static List<Integer> pageNums ;
@@ -40,9 +41,6 @@ public class MasterHubServiceImpl implements MasterHubService {
 
     /**
      * 首页功能列表加载方法，使用springboot赋值单参set方法的能力完成
-     * @param fileName
-     * @throws IOException
-     * @throws ClassNotFoundException
      */
     @Value("${main.master.table.file}")
     public void setMasterTableInfos(String fileName) throws IOException, ClassNotFoundException {
